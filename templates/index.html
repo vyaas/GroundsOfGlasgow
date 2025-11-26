@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Map Selector</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        #map { height: 90vh; width: 100%; }
+        #controls { padding: 10px; }
+				#result { max-height: 120px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="controls">
+        <button onclick="getLocations()">Get Top Locations</button>
+        <pre id="result"></pre>
+    </div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([20, 0], 2);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Add rectangle for selection
+        let bounds = map.getBounds();
+        let rectangle = L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
+
+        map.on('move', () => {
+            bounds = map.getBounds();
+            rectangle.setBounds(bounds);
+        });
+
+        async function getLocations() {
+            const north = bounds.getNorth();
+            const south = bounds.getSouth();
+            const east = bounds.getEast();
+            const west = bounds.getWest();
+
+            const response = await fetch('/get_locations', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({north, south, east, west})
+            });
+
+            const data = await response.json();
+            document.getElementById('result').innerText = data.join("\n");
+        }
+    </script>
+</body>
+</html>
+
