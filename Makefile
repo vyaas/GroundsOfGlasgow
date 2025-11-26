@@ -1,5 +1,12 @@
 # Check for virtual environment activation script
-VENV_ACTIVATE := $(shell if [ -f env/bin/activate ]; then echo "env/bin/activate"; elif [ -f .env/bin/activate ]; then echo ".env/bin/activate"; fi)
+VENV_ACTIVATE := $(shell \
+    for d in env .env .venv; do \
+        if [ -f $$d/bin/activate ]; then \
+            echo "$$d/bin/activate"; \
+            break; \
+        fi; \
+    done \
+)
 
 .PHONY: install
 
