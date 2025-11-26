@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Map Selector</title>
+    <title>Map Selector with Locations</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        body { margin:0; padding:0; }
         #map { height: 90vh; width: 100%; }
         #controls { padding: 10px; }
 				#result { max-height: 120px; overflow-y: auto; }
+        .marker-city { color: blue; }
+        .marker-landmark { color: red; }
     </style>
 </head>
 <body>
@@ -27,7 +30,7 @@
             maxZoom: 19
         }).addTo(map);
 
-        // Add rectangle for selection
+        // Add rectangle showing current view bounds
         let bounds = map.getBounds();
         let rectangle = L.rectangle(bounds, {color: "#ff7800", weight: 1}).addTo(map);
 
@@ -35,6 +38,9 @@
             bounds = map.getBounds();
             rectangle.setBounds(bounds);
         });
+
+        // Layer group for markers
+        const markersGroup = L.layerGroup().addTo(map);
 
         async function getLocations() {
             const north = bounds.getNorth();
@@ -49,7 +55,26 @@
             });
 
             const data = await response.json();
-            document.getElementById('result').innerText = data.join("\n");
+
+            // Clear previous markers
+            markersGroup.clearLayers();
+
+            // Display in #result
+            document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+
+            // Add markers
+            data.forEach(item => {
+                let marker = L.marker([item.lat, item.long])
+                    .bindPopup(`<b>${item.name}</b>`);
+                markersGroup.addLayer(marker);
+            });
+
+            // Fit map to markers
+            if (data.length > 0) {
+                const latlngs = data.map(d => [d.lat, d.long]);
+                const groupBounds = L.latLngBounds(latlngs);
+                map.fitBounds(groupBounds.pad(0.1));
+            }
         }
     </script>
 </body>
